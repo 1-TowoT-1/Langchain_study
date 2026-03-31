@@ -3,7 +3,7 @@ from langchain_core.messages import HumanMessage,SystemMessage,AIMessage
 from langchain_core.output_parsers import StrOutputParser # 用于字符串输出
 
 model = ChatOllama(
-    model = 'deepseek-r1:1.5b',
+    model = 'glm4:9b',
     base_url = "http://localhost:11434/",
 )
 
@@ -51,15 +51,19 @@ schemas = [
     ResponseSchema(name='age', description='用户的年龄'),
     ResponseSchema(name='like', description='用户的爱好', type='array') # type指定返回类型，这里定义是一个数组
 ]
+# parser定义了格式化输出
 parser = StructuredOutputParser.from_response_schemas(schemas)
+# get_format_instructions将parser变成json的结构化形式
+print(parser.get_format_instructions())
 
 # format_instructions：会通过 partial(...) 提前绑定结构化格式说明
-# 模板包含两个变量：
+# 该提示词模板设置了两个变量：
 # {input}：用户输入的自由文本（如自我介绍）。
-# {xx}：解析器的格式指令（通过 parser.get_format_instructions() 动态填充）。
-prompt = PromptTemplate.from_template('请根据内容提取用户信息，并返回JSON格式：\n{input}\n\n{xx}')
-print(prompt.partial(xx=parser.get_format_instructions())) # 返回一个PromptTemplate对象，即提示词模板
-# parser定义了格式化输出
-chain = prompt.partial(xx=parser.get_format_instructions()) | model | parser
+# {define}：解析器的格式指令（通过 parser.get_format_instructions() 动态填充），自定义的一个变量，为了方便后续填充内容。
+prompt = PromptTemplate.from_template('请根据内容提取用户信息，并返回JSON格式：\n{input}\n\n{define}')
+print(prompt.partial(define=parser.get_format_instructions())) # 返回一个PromptTemplate对象，即提示词模板
+
+# 创建链式
+chain = prompt.partial(define=parser.get_format_instructions()) | model | parser
 result = chain.invoke("我是李雷，今年38岁，喜欢打羽毛球、游泳、美食、旅游等等。")
 result

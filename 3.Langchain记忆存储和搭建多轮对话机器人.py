@@ -7,7 +7,7 @@ import asyncio
 
 # 初始化大模型
 model = ChatOllama(
-    model = "deepseek-r1:1.5b",
+    model = "glm4:9b",
     base_url = "http://localhost:11434/",
 )
 
@@ -18,6 +18,7 @@ parser = StrOutputParser()
 prompt = ChatPromptTemplate([
     SystemMessage(content="你是一个智能助手，是生物信息学方面的专家，帮助用户解决问题。"),
     # MessagesPlaceholder 在对话链(conversation chain)中预留消息的位置。
+    # 这个变量不是一个简单的字符串，可以是一组 ChatMessage 对象（例如 HumanMessage, AIMessage, SystemMessage 等）。
     MessagesPlaceholder(variable_name="chat_history")
 ])
 
@@ -40,6 +41,7 @@ async def chat_loop(messages_list):
         # 调用模型流式生成响应
         ai_query_stream = basical_chain.astream({"chat_history": messages_list})  
         full_response = ""
+        print("🤖 小智：", end="")
         async for chunk in ai_query_stream:
             # flush 是强制立即刷新输出缓冲区，确保内容实时显示在终端，而不是等待缓冲区满或换行时才输出。
             print(chunk, end="", flush=True)
